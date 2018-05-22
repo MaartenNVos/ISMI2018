@@ -1,7 +1,7 @@
 
 # coding: utf-8
 
-# In[8]:
+# In[70]:
 
 
 import numpy as np
@@ -11,7 +11,7 @@ from random import shuffle, sample
 from scipy.misc import imread
 
 
-# In[9]:
+# In[71]:
 
 
 from matplotlib import pyplot as plt
@@ -30,7 +30,7 @@ def plot_image(images, images_per_row=8):
     plt.show()
 
 
-# In[10]:
+# In[72]:
 
 
 def listCaseIDs(dataRoot):
@@ -57,7 +57,7 @@ def loadRegion(filename,dataRoot,border=(0,0)):
     return region,mask
 
 
-# In[11]:
+# In[73]:
 
 
 def getPatch(location,scan,patchSize=(101,101),reduceDim=True):
@@ -83,7 +83,7 @@ def getPatch(location,scan,patchSize=(101,101),reduceDim=True):
     return patch
 
 
-# In[12]:
+# In[74]:
 
 
 class PatchGenerator(object):
@@ -135,7 +135,7 @@ class PatchGenerator(object):
         TP = [(x,y) for x,y in zip(TP[0],TP[1])]
         
         #get the negative sample locations
-        TN = np.where(mask==0.0)
+        TN = np.where(np.logical_and(mask>-1,mask<1))
         Nindex = sample(range(len(TN[0])), len(TP))
         TN = [(x,y) for x,y in zip(TN[0][Nindex],TN[1][Nindex])]
         return image,TP,TN
@@ -152,7 +152,7 @@ class PatchGenerator(object):
             image,p_points,n_points = self.loadImage(fileID)
             
             #how many points to sample
-            toSample = self.samplesPerClass - len(X)
+            toSample = self.samplesPerClass - int(len(X)/2)
             
             if(toSample > 0 and toSample < len(p_points)):
                 p_points = sample(p_points,toSample)
@@ -169,6 +169,8 @@ class PatchGenerator(object):
             #make the positive patches
             for loc in n_points:
                 patch = getPatch(loc,image,patchSize=self.patch_size)
+                if(not self.augmentation_fn is None):
+                    patch = self.augmentation_fn(patch)
                 X.append(patch)
                 Y.append((0.0,1.0))
             
@@ -179,7 +181,7 @@ class PatchGenerator(object):
             
 
 
-# In[13]:
+# In[75]:
 
 
 #make a dummy data set
@@ -205,17 +207,20 @@ def make_dummy_data(NrImages,imagesize,dataDir):
         
 
 
-# In[15]:
+# In[76]:
 
 
 if(__name__ == "__main__"):
-    dataDir = "/projects/0/ismi2018/FINALPROJECTS/BREAST_THOMOSYNTHESIS"
-    dataDir = "./testData"
+    #dataDir = "/projects/0/ismi2018/FINALPROJECTS/BREAST_THOMOSYNTHESIS"
+    dataDir = "./regions"
     #make_dummy_data(10,(500,500),dataDir)
     gen = PatchGenerator(dataDir,32,1,(21,21))
 
     for batch_x, batch_y in gen:
         print(batch_x.shape)
         print(batch_y.shape)
-        break
+        
+        #plt.imshow(batch_x[0,:,:,0])
+        #plt.show()
+        #break
 
